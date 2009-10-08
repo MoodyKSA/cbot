@@ -72,6 +72,7 @@ int raw(IRCBot *bot, char *format, ...)
 	memset(&sendbuf, 0, strlen(sendbuf));
 	
 	vsnprintf(sendbuf, BUFFER_LEN-1, format, args); //buf contains the formatted string
+	va_end(args);
 	strcpy( (sendbuf+strlen(sendbuf)), "\r\n");
 	
 	int len = strlen(sendbuf);
