@@ -46,14 +46,14 @@ int init_connection(IRCBot *bot)
 	return 1;
 }
 
-int match(const char *pattern, char *text, regmatch_t pmatch, int size)
+int match(const char *pattern, char *text, regmatch_t *pmatch, int size)
 {
 	int rc = -1;
 	regex_t regexp;
 	if (0 != (rc = regcomp(&regexp, pattern, REG_EXTENDED))) {
 		fprintf(stderr, "regcomp() failed, returning nonzero (%d)\n", rc);
 	} else {
-		if (0 != (rc = regexec(&regexp, text, (size_t)size, &pmatch, 0))) {
+		if (0 != (rc = regexec(&regexp, text, (size_t)size, pmatch, 0))) {
 			if ( rc == 1 )
 				rc = -1;
 		} else {
@@ -126,13 +126,13 @@ int parse(IRCBot *bot)
 
 	strcpy(msg, bot->buf);
 	
-	if ( match("^PING", msg, pmatch[0], 1) == 1 ) {
+	if ( match("^PING", msg, pmatch, 1) == 1 ) {
 		raw(bot, "PONG %s\r\n", &(msg[5]));
 	}
 
-	if ( match("([^:][^@]+[@][^ ]+)", msg, pmatch[0], 1) == 1) {
+	if ( match("([^:][^@]+[@][^ ]+)", msg, pmatch, 1) == 1) {
 		// Yes, i am absolutely clueless as to how this works :D
-		privmsg(bot, "#baddog", "%i - %i = %i (%i) in (%i) \"%s\".", pmatch[0].rm_eo, pmatch[0].rm_so, (pmatch[0].rm_eo-pmatch[0].rm_so), ((int)pmatch[0].rm_eo-pmatch[0].rm_so)-(int)&msg, &msg, msg);
+		privmsg(bot, "#baddog", "%#x - %#x = %#x (%#x) in (%#x) \"%s\".", pmatch[0].rm_eo, pmatch[0].rm_so, (pmatch[0].rm_eo-pmatch[0].rm_so), ((size_t)pmatch[0].rm_eo-pmatch[0].rm_so)-(size_t)&msg, &msg, msg);
 	}
 	return 0;
 }
@@ -166,7 +166,7 @@ int main (int argc, char *argv[])
 {
 	IRCBot bot1;
 	
-	init_socket(&bot1, "CBot_d", "irc.eighthbit.net", "6667");
+	init_socket(&bot1, "CBot_s", "irc.eighthbit.net", "6667");
 	init_connection(&bot1);
 	bot1.chans[0] = "#baddog";
 	join(&bot1, bot1.chans[0]);

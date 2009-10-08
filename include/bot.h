@@ -27,7 +27,7 @@ typedef struct ircbot {
 	int num_chans;
 } IRCBot;
 
-int match(const char *pattern, char *text, regmatch_t pmatch, int size);
+int match(const char *pattern, char *text, regmatch_t *pmatch, int size);
 int raw(IRCBot *bot, char *format, ...);
 int nick(IRCBot *bot, char *nick);
 int join(IRCBot *bot, char *channel);
