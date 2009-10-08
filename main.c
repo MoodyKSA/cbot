@@ -89,19 +89,88 @@ int nick(IRCBot *bot, char *nick)
 int join(IRCBot *bot, char *channel)
 {
 	int sent;
+	int i;
+	int cmp;
+	int newIndex = 0;
+	char *chanMemory;
+
 	if ( bot->num_chans < MAX_CHANS ) {
 		sent = raw(bot, "JOIN %s", channel);
-		//bot.chans[bot.num_chans] = channel;
-		//bot.num_chans++;
-		return sent;
 	} else {
 		return -1;
 	}
+
+	// Figure out where to put the new channel alphabetically.
+	for (i = 0; i < bot->num_chans+1; i++) {
+		if (bot->chans[i] == NULL) {
+			// This is the last channel. Use it.
+			newIndex = i;
+			break;
+		}
+		if ((cmp = strcmp(bot->chans[i], channel)) == 0) {
+			raw(bot, "PART %s :Memory error", channel);
+			return -1;
+		}
+		if (cmp > 0) {
+			newIndex = i;
+			break;
+		}
+	}
+
+	// Copy i = i-1 for all elements above the point we're adding the
+	// new channel to.
+	for (i = bot->num_chans+1; i > newIndex; i--) {
+		bot->chans[i] = bot->chans[i-1];
+	}
+
+	// Save new channel.
+	chanMemory = malloc(strlen(channel)+1);
+	strcpy(chanMemory, channel);
+	bot->chans[newIndex] = chanMemory;
+	bot->num_chans++;
+
+	return sent;
 }
 
 int part(IRCBot *bot, char *channel, char *format, ...)
 {
-	// TODO: Implement part()
+	int i;
+	int chanIndex = MAX_CHANS+1;
+	va_list ap;
+	char partString[BUFFER_LEN];
+
+	// We should use a binary search, but since I'm lazy atm, I'll use a loop.
+	for (i = 0; i < bot->num_chans; i++) {
+		if (strcmp(bot->chans[i], channel) == 0) {
+			chanIndex = i;
+			break;
+		}
+	}
+
+	// Index not found.
+	if (chanIndex == MAX_CHANS+1) {
+		return -1;
+	}
+
+	// Free memory allocated by join.
+	free(bot->chans[chanIndex]);
+
+	// Copy i = i+1 for all elements above the point we're removing the
+	// new channel from.
+	for (i = chanIndex; i < bot->num_chans-1; i++) {
+		bot->chans[i] = bot->chans[i+1];
+	}
+
+	// Part the channel and set the last element to NULL.
+	bot->num_chans--;
+	bot->chans[bot->num_chans] = NULL;
+
+	va_start(ap, format);
+	vsnprintf(partString, BUFFER_LEN, format, ap);
+	va_end(ap);
+
+	raw(bot, "PART %s :%s", channel, partString);
+
 	return 0;
 }
 
@@ -164,12 +233,12 @@ int fetch_data_from_socket(IRCBot *bot)
 
 int main (int argc, char *argv[])
 {
-	IRCBot bot1;
+	IRCBot bot1 = {0};
 	
 	init_socket(&bot1, "CBot_s", "irc.eighthbit.net", "6667");
 	init_connection(&bot1);
-	bot1.chans[0] = "#baddog";
-	join(&bot1, bot1.chans[0]);
+	join(&bot1, "#baddog");
+	join(&bot1, "#offtopic2");
 	
 	while(1) {
 		fetch_data_from_socket(&bot1);

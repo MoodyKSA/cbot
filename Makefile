@@ -3,9 +3,9 @@ SRCS= main.c
 OBJS= $(SRCS:.c=.o)
 
 CC= gcc
-CCFLAGS= -Wall -Iinclude -march=native -mtune=native -O2 -pipe
+CCFLAGS= -g -Wall -Iinclude -O0 -pipe
 LD= gcc
-LDFLAGS= $(LIBS)
+LDFLAGS= -g $(LIBS)
 
 all: $(BIN)
 
