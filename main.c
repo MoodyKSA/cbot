@@ -139,7 +139,7 @@ int part(IRCBot *bot, char *channel, char *format, ...)
 	int cmp;
 	int chanIndex = MAX_CHANS+1;
 	va_list ap;
-	char partString[BUFFER_LEN];
+	char partString[BUFFER_LEN] = {0};
 
 	// Binary search for the channel.
 	l = 0;
