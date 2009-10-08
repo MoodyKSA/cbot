@@ -157,7 +157,7 @@ int part(IRCBot *bot, char *channel, char *format, ...)
 	free(bot->chans[chanIndex]);
 
 	// Copy i = i+1 for all elements above the point we're removing the
-	// new channel from.
+	// channel from.
 	for (i = chanIndex; i < bot->num_chans-1; i++) {
 		bot->chans[i] = bot->chans[i+1];
 	}
