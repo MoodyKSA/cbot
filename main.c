@@ -135,16 +135,30 @@ int join(IRCBot *bot, char *channel)
 
 int part(IRCBot *bot, char *channel, char *format, ...)
 {
-	int i;
+	int i, l, r;
+	int cmp;
 	int chanIndex = MAX_CHANS+1;
 	va_list ap;
 	char partString[BUFFER_LEN];
 
-	// We should use a binary search, but since I'm lazy atm, I'll use a loop.
-	for (i = 0; i < bot->num_chans; i++) {
-		if (strcmp(bot->chans[i], channel) == 0) {
+	// Binary search for the channel.
+	l = 0;
+	r = bot->num_chans-1;
+	i = (l + r)/2;
+	while (chanIndex == MAX_CHANS+1) {
+		if ((cmp = strcmp(bot->chans[i], channel)) < 0) {
+			// The channel is in the upper range.
+			l = i+1;
+			i = (l + r)/2;
+		}
+		if (cmp == 0) {
+			// Found it.
 			chanIndex = i;
-			break;
+		}
+		if (cmp > 0) {
+			// The channel is in the lower range.
+			r = i-1;
+			i = (l + r)/2;
 		}
 	}
 
