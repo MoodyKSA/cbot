@@ -81,6 +81,23 @@ int raw(IRCBot *bot, char *format, ...)
 	return sent;
 }
 
+/* Change bot's nickname on IRC
+
+   Precondition: IRCBot struct must be instantiated and connected to
+   an IRC server.
+
+   Postcondition: Bot's nick will be changed to the new nick in the
+   IRCbot instance. 
+
+   Returns: an int from the system's send function.
+
+   QUESTION: How are nick change errors handled? What happens if the
+   nick is already taken?
+
+   QUESTION: What happens if the IRCBot struct is not instantiated?
+   Are any runtime checks going to be added?
+
+ */
 int nick(IRCBot *bot, char *nick)
 {
 	bot->nick = nick;
