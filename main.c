@@ -108,6 +108,20 @@ int nick(IRCBot *bot, char *nick)
 	return raw(bot, "NICK %s", nick);
 }
 
+/* Add a channel to current bot instance's channel list
+   
+   PRECONDITION: IRCBot struct is instantiated.
+
+   POSTCONDITION: IRCBot struct has a channel added to it's list
+
+   QUESTION: Do we detect multiple entries?
+
+ */
+int add_channel(IRCBot *bot, char *channel) 
+{ /* Function stub */
+  return -1;
+}
+
 int join(IRCBot *bot, char *channel)
 {
 	int sent;
