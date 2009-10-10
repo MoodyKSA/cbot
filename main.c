@@ -53,7 +53,7 @@ int match(const char *pattern, char *text, regmatch_t *pmatch, int size)
 	if (0 != (rc = regcomp(&regexp, pattern, REG_EXTENDED))) {
 		fprintf(stderr, "regcomp() failed, returning nonzero (%d)\n", rc);
 	} else {
-		if (0 != (rc = regexec(&regexp, text, (size_t)size, pmatch, 0))) {
+		if (0 != (rc = regexec(&regexp, text, size, pmatch, 0))) {
 			if ( rc == 1 )
 				rc = -1;
 		} else {
@@ -195,6 +195,7 @@ int privmsg(IRCBot *bot, char *recip, char *format, ...)
 	va_list args;
 	va_start(args, format);
 	
+	// char sendbuf[BUFFER_LEN] = {0}; perhaps?
 	memset(&sendbuf, 0, strlen(sendbuf));
 	
 	vsprintf(sendbuf, format, args); //buf contains the formatted string
@@ -204,9 +205,13 @@ int privmsg(IRCBot *bot, char *recip, char *format, ...)
 int parse(IRCBot *bot)
 {
 	char msg[BUFFER_LEN];
+	char tmp[BUFFER_LEN];
+	IRCUser *sender;
+	int n,i;
+	int sender_end, user_end;
 	regmatch_t pmatch[4];
 	
-	printf(">> %s", bot->buf);
+	printf(">> %s\n", bot->buf);
 
 	strcpy(msg, bot->buf);
 	
@@ -214,9 +219,40 @@ int parse(IRCBot *bot)
 		raw(bot, "PONG %s\r\n", &(msg[5]));
 	}
 
-	if ( match("([^:][^@]+[@][^ ]+)", msg, pmatch, 1) == 1) {
-		// Yes, i am absolutely clueless as to how this works :D
-		privmsg(bot, "#baddog", "%#x - %#x = %#x (%#x) in (%#x) \"%s\".", pmatch[0].rm_eo, pmatch[0].rm_so, (pmatch[0].rm_eo-pmatch[0].rm_so), ((size_t)pmatch[0].rm_eo-pmatch[0].rm_so)-(size_t)&msg, &msg, msg);
+	if ( match("([^: ][^! ]+[!][^@ ]+[@][^ ]+)", msg, pmatch, 1) == 1) {
+		memset(&tmp, 0, BUFFER_LEN);
+		memset(sender->nick, 0, BUFFER_LEN);
+		memset(sender->user, 0, BUFFER_LEN);
+		memset(sender->host, 0, BUFFER_LEN);
+		n = (size_t)pmatch[0].rm_so;
+		strcpy(tmp, (msg+n+1));
+		n = (size_t)pmatch[0].rm_eo;
+		tmp[n-1] = '\0';
+		
+		/*strcpy(sender->nick, tmp);
+		strcpy(sender->user, sender->nick);
+		strcpy(sender->host, sender->user);*/		
+		n = strlen(tmp);
+		for ( i = 0; i < n; i++ ) {
+			switch(tmp[i]) {
+				case '!':
+					sender_end = i;
+					break;
+				case '@':
+					user_end = i;
+					break;
+			}
+		}
+		strcpy(sender->nick, tmp);
+		sender->nick[sender_end] = '\0';
+		
+		strcpy(sender->user, (tmp+sender_end+1));
+		sender->user[user_end] = '\0';
+		
+		strcpy(sender->host, (tmp+user_end+1));
+		
+		privmsg(bot, "#baddog", "ohi?");
+		privmsg(bot, "#baddog", "Sender information - Nickname: %s; User: %s; Host: %s", sender->nick, sender->user, sender->host);
 	}
 	return 0;
 }
@@ -250,7 +286,7 @@ int main (int argc, char *argv[])
 {
 	IRCBot bot1 = {0};
 	
-	init_socket(&bot1, "CBot_s", "irc.eighthbit.net", "6667");
+	init_socket(&bot1, "CBot_d", "irc.eighthbit.net", "6667");
 	init_connection(&bot1);
 	join(&bot1, "#baddog");
 	join(&bot1, "#offtopic2");

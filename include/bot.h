@@ -27,6 +27,12 @@ typedef struct ircbot {
 	int num_chans;
 } IRCBot;
 
+typedef struct ircuser {
+	char nick[BUFFER_LEN];
+	char user[BUFFER_LEN];
+	char host[BUFFER_LEN];
+} IRCUser;
+
 int match(const char *pattern, char *text, regmatch_t *pmatch, int size);
 int raw(IRCBot *bot, char *format, ...);
 int nick(IRCBot *bot, char *nick);
