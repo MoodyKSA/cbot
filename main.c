@@ -12,16 +12,16 @@ int init_socket(IRCBot *bot, char *nick, char *server, char *port)
 	switch(getaddrinfo( bot->server, bot->port, &bot->hints, &bot->res))
 	{
 		case -2:
-			printf("Error: Name or Service not known\n");
+			fprintf(stderr, "Error: Name or Service not known\n");
 			return -2;
 		case -3:
-			printf("Error: Temporary failure in name resolution\n");
+			fprintf(stderr, "Error: Temporary failure in name resolution\n");
 			return -3;
 		case -4:
-			printf("Error: Failure in name resolution\n");
+			fprintf(stderr, "Error: Failure in name resolution\n");
 			return -4;
 		case -11:
-			printf("System returned error %i\n", errno);
+			fprintf(stderr, "System returned error %i\n", errno);
 			return errno;
 	}
 
@@ -33,7 +33,7 @@ int init_socket(IRCBot *bot, char *nick, char *server, char *port)
 		printf("Connected!\n");
 	} else {
 		// It Failed
-		printf("Error: %i\n", errno);
+		fprintf(stderr, "Error: %i\n", errno);
 		return errno;
 	}
 	return 0;
