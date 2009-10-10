@@ -206,7 +206,7 @@ int parse(IRCBot *bot)
 {
 	char msg[BUFFER_LEN];
 	char tmp[BUFFER_LEN];
-	IRCUser *sender;
+	IRCUser *sender = (IRCUser *)malloc(sizeof (IRCUser));
 	int n,i;
 	int sender_end, user_end;
 	regmatch_t pmatch[4];
@@ -225,7 +225,7 @@ int parse(IRCBot *bot)
 		memset(sender->user, 0, BUFFER_LEN);
 		memset(sender->host, 0, BUFFER_LEN);
 		n = (size_t)pmatch[0].rm_so;
-		strcpy(tmp, (msg+n+1));
+		strcpy(tmp, (msg+n));
 		n = (size_t)pmatch[0].rm_eo;
 		tmp[n-1] = '\0';
 		
@@ -247,11 +247,10 @@ int parse(IRCBot *bot)
 		sender->nick[sender_end] = '\0';
 		
 		strcpy(sender->user, (tmp+sender_end+1));
-		sender->user[user_end] = '\0';
+		sender->user[user_end-sender_end-1] = '\0';
 		
 		strcpy(sender->host, (tmp+user_end+1));
 		
-		privmsg(bot, "#baddog", "ohi?");
 		privmsg(bot, "#baddog", "Sender information - Nickname: %s; User: %s; Host: %s", sender->nick, sender->user, sender->host);
 	}
 	return 0;
