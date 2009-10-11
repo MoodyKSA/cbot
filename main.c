@@ -2,9 +2,13 @@
 
 int init_socket(IRCBot *bot, char *nick, char *server, char *port)
 {
-	bot->nick = nick;
-	bot->server = server;
-	bot->port = port;
+	bot->nick = malloc(strlen(nick));
+	bot->server = malloc(strlen(server));
+	bot->port = malloc(strlen(port));
+	bot->buf = malloc(BUFFER_LEN);
+	strcpy(bot->nick, nick);
+	strcpy(bot->server, server);
+	strcpy(bot->port, port);
 	bot->num_chans = 0;
 	memset( &bot->hints, 0, sizeof bot->hints);
 	bot->hints.ai_family = AF_UNSPEC;
@@ -191,7 +195,8 @@ int part(IRCBot *bot, char *channel, char *format, ...)
 
 int privmsg(IRCBot *bot, char *recip, char *format, ...)
 {
-	char sendbuf[BUFFER_LEN];
+	char *sendbuf = malloc(BUFFER_LEN);
+	int ret;
 	va_list args;
 	va_start(args, format);
 	
@@ -199,22 +204,21 @@ int privmsg(IRCBot *bot, char *recip, char *format, ...)
 	memset(&sendbuf, 0, strlen(sendbuf));
 	
 	vsprintf(sendbuf, format, args); //buf contains the formatted string
-	return raw(bot, "PRIVMSG %s :%s", recip, sendbuf);
+	ret = raw(bot, "PRIVMSG %s :%s", recip, sendbuf);
+	free(sendbuf);
+	return ret;
 }
 
-int parse(IRCBot *bot)
+int parse(IRCBot *bot, char *msg)
 {
-	char msg[BUFFER_LEN];
-	char tmp[BUFFER_LEN];
+	char *tmp = malloc(BUFFER_LEN);
 	IRCMessage *message = (IRCMessage *)malloc(sizeof (IRCMessage));
 	message->sender = (IRCUser *)malloc(sizeof (IRCUser));
 	int n,i;
 	int sender_end, user_end, recip_end;
 	regmatch_t pmatch[4];
 	
-	printf(">> %s\n", bot->buf);
-
-	strcpy(msg, bot->buf);
+	printf(">> %s\n", msg);
 	
 	if ( match("^PING", msg, pmatch, 1) == 1 ) {
 		raw(bot, "PONG %s\r\n", &(msg[5]));
@@ -222,7 +226,7 @@ int parse(IRCBot *bot)
 
 	if ( match("([^: ][^! ]+[!][^@ ]+[@][^ ]+)", msg, pmatch, 1) == 1) {
 		memset(&tmp, 0, BUFFER_LEN);
-		memset(message->sender->nick, 0, BUFFER_LEN);
+		memset(message->sender->nick, 0, BUFFER_LEN); // SEGFAULT here
 		memset(message->sender->user, 0, BUFFER_LEN);
 		memset(message->sender->host, 0, BUFFER_LEN);
 		//memset(message->type, 0, BUFFER_LEN);
@@ -268,7 +272,7 @@ int parse(IRCBot *bot)
 		n = strlen(message->recip);
 		privmsg(bot, "#baddog", "%c at 0x%x", *(message->recip), &(message->recip));
 		if ( *(message->recip) == ':' ) {
-			//&(message->recip)++;
+			//&(message->recip)+=1;
 		}
 		for ( i = 0; i < n; i++ ) {
 			if ( message->recip[i] == ' ' ) {
@@ -282,16 +286,17 @@ int parse(IRCBot *bot)
 	return 0;
 }
 
-int fetch_data_from_socket(IRCBot *bot)
+int fetch_data_from_socket(IRCBot *bot, char *text)
 {
 	unsigned int i;
 	int break_loop = 0;
-	memset(&bot->buf, 0, BUFFER_LEN);
+	char *buf = (char*)malloc(BUFFER_LEN);
+	memset(buf, 0, BUFFER_LEN);
 
-	while ( recv(bot->sock, &(bot->buf[strlen(bot->buf)]), 1, 0) && (strlen(bot->buf)<=MESSAGE_LEN) ) {
+	while ( recv(bot->sock, &(buf[strlen(buf)]), 1, 0) && (strlen(buf)<=MESSAGE_LEN) ) {
 		for ( i = 0; i < MESSAGE_LEN; i++ ) {
-			if(bot->buf[i] == '\n') {
-				bot->buf[i-1] = '\0';
+			if(buf[i] == '\n') {
+				buf[i-1] = '\0';
 				break_loop = 1;
 				break;
 			}
@@ -300,25 +305,27 @@ int fetch_data_from_socket(IRCBot *bot)
 			break;
 	}
 	for ( i = 0; i < MESSAGE_LEN; i++) {
-		if(bot->buf[i] == '\n') {
-			bot->buf[i-1]='\0';
+		if(buf[i] == '\n') {
+			buf[i-1]='\0';
 		}
 	}
+	strcpy(text, buf);
 	return 0;
 }
 
 int main (int argc, char *argv[])
 {
-	IRCBot bot1 = {0};
+	IRCBot *bot1 = malloc(sizeof(IRCBot));
+	char *text = malloc(BUFFER_LEN);
 	
-	init_socket(&bot1, "CBot_d", "irc.eighthbit.net", "6667");
-	init_connection(&bot1);
-	join(&bot1, "#baddog");
-	join(&bot1, "#offtopic2");
+	init_socket(bot1, "CBot_d", "irc.eighthbit.net", "6667");
+	init_connection(bot1);
+	join(bot1, "#baddog");
+	join(bot1, "#offtopic2");
 	
 	while(1) {
-		fetch_data_from_socket(&bot1);
-		parse(&bot1);
+		fetch_data_from_socket(bot1, text);
+		parse(bot1, text);
 	}
 	return 0;
 }
