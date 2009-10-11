@@ -226,7 +226,7 @@ int parse(IRCBot *bot, char *msg)
 
 	if ( match("([^: ][^! ]+[!][^@ ]+[@][^ ]+)", msg, pmatch, 1) == 1) {
 		message->sender->nick = malloc(BUFFER_LEN);
-		memset(message->sender->nick, 0, BUFFER_LEN); // SEGFAULT here
+		memset(message->sender->nick, 0, BUFFER_LEN);
 		message->sender->user = malloc(BUFFER_LEN);
 		memset(message->sender->user, 0, BUFFER_LEN);
 		message->sender->host = malloc(BUFFER_LEN);
@@ -275,9 +275,9 @@ int parse(IRCBot *bot, char *msg)
 		n = strlen(message->sender->nick)+strlen(message->sender->user)+strlen(message->sender->host)+5+recip_end;
 		strcpy(message->recip, (msg+n));
 		n = strlen(message->recip);
-		privmsg(bot, "#baddog", "%c at 0x%x", *(message->recip), &(message->recip));
+
 		if ( *(message->recip) == ':' ) {
-			//&(message->recip)+=1;
+			message->recip+=1;
 		}
 		for ( i = 0; i < n; i++ ) {
 			if ( message->recip[i] == ' ' ) {
