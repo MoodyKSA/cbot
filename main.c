@@ -206,9 +206,10 @@ int parse(IRCBot *bot)
 {
 	char msg[BUFFER_LEN];
 	char tmp[BUFFER_LEN];
-	IRCUser *sender = (IRCUser *)malloc(sizeof (IRCUser));
+	IRCMessage *message = (IRCMessage *)malloc(sizeof (IRCMessage));
+	message->sender = (IRCUser *)malloc(sizeof (IRCUser));
 	int n,i;
-	int sender_end, user_end;
+	int sender_end, user_end, recip_end;
 	regmatch_t pmatch[4];
 	
 	printf(">> %s\n", bot->buf);
@@ -221,17 +222,17 @@ int parse(IRCBot *bot)
 
 	if ( match("([^: ][^! ]+[!][^@ ]+[@][^ ]+)", msg, pmatch, 1) == 1) {
 		memset(&tmp, 0, BUFFER_LEN);
-		memset(sender->nick, 0, BUFFER_LEN);
-		memset(sender->user, 0, BUFFER_LEN);
-		memset(sender->host, 0, BUFFER_LEN);
+		memset(message->sender->nick, 0, BUFFER_LEN);
+		memset(message->sender->user, 0, BUFFER_LEN);
+		memset(message->sender->host, 0, BUFFER_LEN);
+		//memset(message->type, 0, BUFFER_LEN);
+		//memset(message->recip, 0, BUFFER_LEN);
+		//memset(message->text, 0, BUFFER_LEN);
 		n = (size_t)pmatch[0].rm_so;
 		strcpy(tmp, (msg+n));
 		n = (size_t)pmatch[0].rm_eo;
 		tmp[n-1] = '\0';
 		
-		/*strcpy(sender->nick, tmp);
-		strcpy(sender->user, sender->nick);
-		strcpy(sender->host, sender->user);*/		
 		n = strlen(tmp);
 		for ( i = 0; i < n; i++ ) {
 			switch(tmp[i]) {
@@ -243,15 +244,40 @@ int parse(IRCBot *bot)
 					break;
 			}
 		}
-		strcpy(sender->nick, tmp);
-		sender->nick[sender_end] = '\0';
+		strcpy(message->sender->nick, tmp);
+		message->sender->nick[sender_end] = '\0';
 		
-		strcpy(sender->user, (tmp+sender_end+1));
-		sender->user[user_end-sender_end-1] = '\0';
+		strcpy(message->sender->user, (tmp+sender_end+1));
+		message->sender->user[user_end-sender_end-1] = '\0';
 		
-		strcpy(sender->host, (tmp+user_end+1));
+		strcpy(message->sender->host, (tmp+user_end+1));
 		
-		privmsg(bot, "#baddog", "Sender information - Nickname: %s; User: %s; Host: %s", sender->nick, sender->user, sender->host);
+		n = strlen(message->sender->nick)+strlen(message->sender->user)+strlen(message->sender->host)+4;
+		strcpy(message->type, (msg+n));
+		n = strlen(message->type);
+		for ( i = 0; i < n; i++ ) {
+			if ( message->type[i] == ' ' ) {
+				recip_end = i;
+				message->type[i] = '\0';
+				break;
+			}
+		}
+		
+		n = strlen(message->sender->nick)+strlen(message->sender->user)+strlen(message->sender->host)+5+recip_end;
+		strcpy(message->recip, (msg+n));
+		n = strlen(message->recip);
+		privmsg(bot, "#baddog", "%c at 0x%x", *(message->recip), &(message->recip));
+		if ( *(message->recip) == ':' ) {
+			//&(message->recip)++;
+		}
+		for ( i = 0; i < n; i++ ) {
+			if ( message->recip[i] == ' ' ) {
+				message->recip[i] = '\0';
+				break;
+			}
+		}
+		
+		privmsg(bot, "#baddog", "':%s!%s@%s %s %s'", message->sender->nick, message->sender->user, message->sender->host, message->type, message->recip);
 	}
 	return 0;
 }

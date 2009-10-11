@@ -33,6 +33,13 @@ typedef struct ircuser {
 	char host[BUFFER_LEN];
 } IRCUser;
 
+typedef struct ircmessage {
+	IRCUser *sender;
+	char type[BUFFER_LEN];
+	char recip[BUFFER_LEN];
+	char text[BUFFER_LEN];
+} IRCMessage;
+
 int match(const char *pattern, char *text, regmatch_t *pmatch, int size);
 int raw(IRCBot *bot, char *format, ...);
 int nick(IRCBot *bot, char *nick);
