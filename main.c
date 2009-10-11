@@ -201,8 +201,8 @@ int privmsg(IRCBot *bot, char *recip, char *format, ...)
 	va_start(args, format);
 	
 	// char sendbuf[BUFFER_LEN] = {0}; perhaps?
-	memset(&sendbuf, 0, strlen(sendbuf));
-	
+	memset(sendbuf, 0, strlen(sendbuf));
+
 	vsprintf(sendbuf, format, args); //buf contains the formatted string
 	ret = raw(bot, "PRIVMSG %s :%s", recip, sendbuf);
 	free(sendbuf);
@@ -225,13 +225,18 @@ int parse(IRCBot *bot, char *msg)
 	}
 
 	if ( match("([^: ][^! ]+[!][^@ ]+[@][^ ]+)", msg, pmatch, 1) == 1) {
-		memset(&tmp, 0, BUFFER_LEN);
+		message->sender->nick = malloc(BUFFER_LEN);
 		memset(message->sender->nick, 0, BUFFER_LEN); // SEGFAULT here
+		message->sender->user = malloc(BUFFER_LEN);
 		memset(message->sender->user, 0, BUFFER_LEN);
+		message->sender->host = malloc(BUFFER_LEN);
 		memset(message->sender->host, 0, BUFFER_LEN);
-		//memset(message->type, 0, BUFFER_LEN);
-		//memset(message->recip, 0, BUFFER_LEN);
-		//memset(message->text, 0, BUFFER_LEN);
+		message->type = malloc(BUFFER_LEN);
+		memset(message->type, 0, BUFFER_LEN);
+		message->recip = malloc(BUFFER_LEN);
+		memset(message->recip, 0, BUFFER_LEN);
+		message->text = malloc(BUFFER_LEN);
+		memset(message->text, 0, BUFFER_LEN);
 		n = (size_t)pmatch[0].rm_so;
 		strcpy(tmp, (msg+n));
 		n = (size_t)pmatch[0].rm_eo;
