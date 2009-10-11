@@ -24,7 +24,6 @@ typedef struct ircbot {
 	char *chans[MAX_CHANS];
 	int sock;
 	struct addrinfo hints, *res;
-	char *buf;
 	int num_chans;
 } IRCBot;
 

@@ -5,7 +5,6 @@ int init_socket(IRCBot *bot, char *nick, char *server, char *port)
 	bot->nick = malloc(strlen(nick));
 	bot->server = malloc(strlen(server));
 	bot->port = malloc(strlen(port));
-	bot->buf = malloc(BUFFER_LEN);
 	strcpy(bot->nick, nick);
 	strcpy(bot->server, server);
 	strcpy(bot->port, port);
