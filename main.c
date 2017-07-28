@@ -73,11 +73,11 @@ int raw(IRCBot *bot, char *format, ...)
 	va_list args;
 	va_start(args, format);
 	memset(&sendbuf, 0, strlen(sendbuf));
-	
+
 	vsnprintf(sendbuf, BUFFER_LEN-1, format, args); //buf contains the formatted string
 	va_end(args);
 	strcpy( (sendbuf+strlen(sendbuf)), "\r\n");
-	
+
 	int len = strlen(sendbuf);
 	int sent = send(bot->sock, sendbuf, len, 0);
 	printf("<< %s", sendbuf);
@@ -198,7 +198,7 @@ int privmsg(IRCBot *bot, char *recip, char *format, ...)
 	int ret;
 	va_list args;
 	va_start(args, format);
-	
+
 	// char sendbuf[BUFFER_LEN] = {0}; perhaps?
 	memset(sendbuf, 0, strlen(sendbuf));
 
@@ -216,9 +216,9 @@ int parse(IRCBot *bot, char *msg)
 	int n,i;
 	int sender_end, user_end, recip_end;
 	regmatch_t pmatch[4];
-	
+
 	printf(">> %s\n", msg);
-	
+
 	if ( match("^PING", msg, pmatch, 1) == 1 ) {
 		raw(bot, "PONG %s\r\n", &(msg[5]));
 	}
@@ -240,7 +240,7 @@ int parse(IRCBot *bot, char *msg)
 		strcpy(tmp, (msg+n));
 		n = (size_t)pmatch[0].rm_eo;
 		tmp[n-1] = '\0';
-		
+
 		n = strlen(tmp);
 		for ( i = 0; i < n; i++ ) {
 			switch(tmp[i]) {
@@ -254,13 +254,16 @@ int parse(IRCBot *bot, char *msg)
 		}
 		strcpy(message->sender->nick, tmp);
 		message->sender->nick[sender_end] = '\0';
-		
+
 		strcpy(message->sender->user, (tmp+sender_end+1));
 		message->sender->user[user_end-sender_end-1] = '\0';
-		
+
 		strcpy(message->sender->host, (tmp+user_end+1));
-		
-		n = strlen(message->sender->nick)+strlen(message->sender->user)+strlen(message->sender->host)+4;
+
+		n = strlen(message->sender->nick)+
+        strlen(message->sender->user)+
+        strlen(message->sender->host)+ 4;
+
 		strcpy(message->type, (msg+n));
 		n = strlen(message->type);
 		for ( i = 0; i < n; i++ ) {
@@ -270,8 +273,13 @@ int parse(IRCBot *bot, char *msg)
 				break;
 			}
 		}
-		
-		n = strlen(message->sender->nick)+strlen(message->sender->user)+strlen(message->sender->host)+5+recip_end;
+
+		n = strlen(message->sender->nick)+
+        strlen(message->sender->user)+
+        strlen(message->sender->host)+
+        5+
+        recip_end;
+
 		strcpy(message->recip, (msg+n));
 		n = strlen(message->recip);
 
@@ -284,8 +292,13 @@ int parse(IRCBot *bot, char *msg)
 				break;
 			}
 		}
-		
-		privmsg(bot, "#baddog", "':%s!%s@%s %s %s'", message->sender->nick, message->sender->user, message->sender->host, message->type, message->recip);
+
+		privmsg(bot, "##n0x", "':[%s!] [%s@] [%s] [%s] [%s]'",
+                          message->sender->nick, // Sender Info
+                          message->sender->user,
+                          message->sender->host,
+                          message->type,         // What did he send?
+                          message->recip);       // <PRIVMSG CBot_d>
 	}
 	return 0;
 }
@@ -321,12 +334,17 @@ int main (int argc, char *argv[])
 {
 	IRCBot *bot1 = malloc(sizeof(IRCBot));
 	char *text = malloc(BUFFER_LEN);
-	
+
+  /*
 	init_socket(bot1, "CBot_d", "irc.eighthbit.net", "6667");
 	init_connection(bot1);
 	join(bot1, "#baddog");
-	join(bot1, "#offtopic2");
-	
+	join(bot1, "#offtopic2"); */
+
+  init_socket(bot1, "CBot_d", "irc.freenode.net", "6667");
+	init_connection(bot1);
+	join(bot1, "##n0x");
+
 	while(1) {
 		fetch_data_from_socket(bot1, text);
 		parse(bot1, text);
