@@ -1,5 +1,7 @@
 #include <bot.h>
 
+#define DEBUG 0
+
 int init_socket(IRCBot *bot, char *nick, char *server, char *port)
 {
 	bot->nick = malloc(strlen(nick));
@@ -210,9 +212,10 @@ int privmsg(IRCBot *bot, char *recip, char *format, ...)
 
 int parse(IRCBot *bot, char *msg)
 {
+  // Are we getting more memory or overwriting the prev ones?
 	char *tmp = malloc(BUFFER_LEN);
 	IRCMessage *message = (IRCMessage *)malloc(sizeof (IRCMessage));
-	message->sender = (IRCUser *)malloc(sizeof (IRCUser));
+	            message->sender = (IRCUser *)malloc(sizeof (IRCUser));
 	int n,i;
 	int sender_end, user_end, recip_end;
 	regmatch_t pmatch[4];
@@ -224,23 +227,28 @@ int parse(IRCBot *bot, char *msg)
 	}
 
 	if ( match("([^: ][^! ]+[!][^@ ]+[@][^ ]+)", msg, pmatch, 1) == 1) {
-		message->sender->nick = malloc(BUFFER_LEN);
-		memset(message->sender->nick, 0, BUFFER_LEN);
-		message->sender->user = malloc(BUFFER_LEN);
-		memset(message->sender->user, 0, BUFFER_LEN);
-		message->sender->host = malloc(BUFFER_LEN);
-		memset(message->sender->host, 0, BUFFER_LEN);
-		message->type = malloc(BUFFER_LEN);
-		memset(message->type, 0, BUFFER_LEN);
-		message->recip = malloc(BUFFER_LEN);
-		memset(message->recip, 0, BUFFER_LEN);
-		message->text = malloc(BUFFER_LEN);
-		memset(message->text, 0, BUFFER_LEN);
+
+    #define MEMSET(item) \
+    item = malloc(BUFFER_LEN);\
+    memset(item, 0, BUFFER_LEN);
+    //printf("MemSetting...");
+    //printf("#item:");printf(#item);
+    //printf("\n");
+
+    // Allocating memories
+    MEMSET(message->sender->nick);
+    MEMSET(message->sender->user)
+    MEMSET(message->sender->host);
+    MEMSET(message->type);
+    MEMSET(message->recip);
+    MEMSET(message->text);
+
 		n = (size_t)pmatch[0].rm_so;
 		strcpy(tmp, (msg+n));
 		n = (size_t)pmatch[0].rm_eo;
 		tmp[n-1] = '\0';
 
+    // Parse to find user and the sender's index by their marks
 		n = strlen(tmp);
 		for ( i = 0; i < n; i++ ) {
 			switch(tmp[i]) {
@@ -252,12 +260,11 @@ int parse(IRCBot *bot, char *msg)
 					break;
 			}
 		}
+
 		strcpy(message->sender->nick, tmp);
 		message->sender->nick[sender_end] = '\0';
-
 		strcpy(message->sender->user, (tmp+sender_end+1));
 		message->sender->user[user_end-sender_end-1] = '\0';
-
 		strcpy(message->sender->host, (tmp+user_end+1));
 
 		n = strlen(message->sender->nick)+
@@ -283,9 +290,13 @@ int parse(IRCBot *bot, char *msg)
 		strcpy(message->recip, (msg+n));
 		n = strlen(message->recip);
 
+    /*
+    // wat?
 		if ( *(message->recip) == ':' ) {
-			message->recip+=1;
-		}
+			message->recip += 1;
+		} // */
+
+    //
 		for ( i = 0; i < n; i++ ) {
 			if ( message->recip[i] == ' ' ) {
 				message->recip[i] = '\0';
@@ -293,12 +304,24 @@ int parse(IRCBot *bot, char *msg)
 			}
 		}
 
+    n = strlen(message->sender->nick)+
+        strlen(message->sender->user)+
+        strlen(message->sender->host)+
+        strlen(message->recip)+2+
+        5+
+        recip_end;
+
+    strcpy(message->text, (msg+n) );
+
+    printf("msg=[%s]\n", (message->text));
+
+    /*
 		privmsg(bot, "##n0x", "':[%s!] [%s@] [%s] [%s] [%s]'",
                           message->sender->nick, // Sender Info
                           message->sender->user,
                           message->sender->host,
                           message->type,         // What did he send?
-                          message->recip);       // <PRIVMSG CBot_d>
+                          message->recip);       // <PRIVMSG CBot_d> */
 	}
 	return 0;
 }

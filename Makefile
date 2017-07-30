@@ -14,6 +14,7 @@ all: $(BIN)
 
 $(BIN): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+	./$(BIN)
 
 clean:
 	-rm -f *.o $(BIN)
